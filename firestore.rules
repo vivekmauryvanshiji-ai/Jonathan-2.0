@@ -1,0 +1,56 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Global Helper Primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Student Profile Validator
+    function isValidStudent(data) {
+      return data.keys().hasAll(['uid', 'phoneNumber', 'fullName', 'academicClass', 'board'])
+        && data.uid is string && data.uid == request.auth.uid
+        && data.phoneNumber is string && data.phoneNumber.size() >= 10 && data.phoneNumber.size() <= 20
+        && data.fullName is string && data.fullName.size() >= 2 && data.fullName.size() <= 60
+        && data.academicClass in ['9th', '10th', '11th', '12th']
+        && data.board in ['CBSE', 'UP Board', 'Bihar Board', 'MP Board', 'Rajasthan Board', 'ICSE/ISC', 'Other'];
+    }
+
+    // Default Deny All
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Student Profiles Collection
+    match /students/{studentId} {
+      allow get: if isOwner(studentId);
+      allow list: if false; // Strict PII protection: prevent user list scraping
+      allow create: if isOwner(studentId) 
+                    && isValidId(studentId) 
+                    && isValidStudent(incoming());
+      allow update: if isOwner(studentId) 
+                    && isValidId(studentId) 
+                    && isValidStudent(incoming())
+                    && incoming().uid == existing().uid
+                    && incoming().phoneNumber == existing().phoneNumber;
+      allow delete: if false;
+    }
+  }
+}
