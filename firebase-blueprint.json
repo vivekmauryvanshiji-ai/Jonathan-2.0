@@ -1,0 +1,50 @@
+{
+  "entities": {
+    "StudentProfile": {
+      "title": "StudentProfile",
+      "description": "Student profile holding verified phone number, name, class, and education board.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Firebase Authentication User ID"
+        },
+        "phoneNumber": {
+          "type": "string",
+          "description": "Student verified mobile phone number with +91 country code"
+        },
+        "fullName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 60,
+          "description": "Student full legal or display name"
+        },
+        "academicClass": {
+          "type": "string",
+          "enum": ["9th", "10th", "11th", "12th"],
+          "description": "Enrolled academic class"
+        },
+        "board": {
+          "type": "string",
+          "enum": ["CBSE", "UP Board", "Bihar Board", "MP Board", "Rajasthan Board", "ICSE/ISC", "Other"],
+          "description": "Target board examination"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Account registration timestamp ISO string"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Last profile update timestamp ISO string"
+        }
+      },
+      "required": ["uid", "phoneNumber", "fullName", "academicClass", "board"]
+    }
+  },
+  "firestore": {
+    "/students/{studentId}": {
+      "schema": "#/entities/StudentProfile",
+      "description": "Collection of student profiles protected by UID matching owner access"
+    }
+  }
+}
